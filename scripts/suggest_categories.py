@@ -89,7 +89,7 @@ def find_numbers_dates_amounts(text: str) -> list[str]:
 
     return sorted(set(matches))
 
-def find_named_entities(text_str):
+def find_named_entities(text):
     """
     This will be replaced later by spaCy, but for now
     let's just find the capitalised words not at the start of the sentence.
@@ -115,7 +115,10 @@ def normalise_text(text:str):
 
 
 def suggest_categories(text:str):
-    suggestion=[]
+    """
+    This fxn and it's components will get more and more intelligent per version.
+    """
+    suggestions=[]
 
     number_dates=find_numbers_dates_amounts(text)
     if number_dates:
@@ -133,7 +136,9 @@ def suggest_categories(text:str):
 
     dialects=[]
     for dialect, words in DIALECT_VOCAB.items():
-        dialects.append(find_terms(text,words))
+        found=find_terms(text,words)
+        if found:
+            dialects.append(found)
     if dialects:
         suggestions.append({
             "category": "dialect_words",
@@ -146,7 +151,28 @@ def suggest_categories(text:str):
             "category": "sound_confusions",
             "matched_terms": confusions
         })
+    
+    named_entities=find_named_entities(text)
+    if named_entities:
+        suggestions.append({
+                    "category": "named_entities",
+                    "matched_terms": named_entities
+                })
 
     return suggestions
 
 
+if __name__ == "__main__":
+    examples = [
+        "I did not see him leave before midnight.",
+        "Olubusolami met Euan at St John's College.",
+        "The appointment is on the 13th of February at 4:15.",
+        "That was a wee bit strange.",
+        "Three officers searched the car.",
+        "I did not meet Chinedu on the 14th of March.",
+        "There really is a lot of wahala o."
+    ]
+
+    for example in examples:
+        print("\nTEXT:", example)
+        print("SUGGESTIONS:", suggest_categories(example))
