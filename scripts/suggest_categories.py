@@ -16,7 +16,7 @@ for manual review.
 
 import re
  
- NEGATION_TERMS = [
+NEGATION_TERMS = [
     "not", "no", "never", "without", "unless",
     "didn't", "doesn't", "don't", "can't", "cannot",
     "won't", "wasn't", "weren't", "isn't", "aren't",
@@ -112,3 +112,41 @@ def find_named_entities(text_str):
     
 def normalise_text(text:str):
     return text.lower().strip()
+
+
+def suggest_categories(text:str):
+    suggestion=[]
+
+    number_dates=find_numbers_dates_amounts(text)
+    if number_dates:
+        suggestions.append({
+            "category": "numbers_dates_amounts",
+            "matched_terms": number_dates
+        })
+
+    negations=find_terms(text, NEGATION_TERMS)
+    if negations:
+        suggestions.append({
+            "category": "negations",
+            "matched_terms": negations
+        })
+
+    dialects=[]
+    for dialect, words in DIALECT_VOCAB.items():
+        dialects.append(find_terms(text,words))
+    if dialects:
+        suggestions.append({
+            "category": "dialect_words",
+            "matched_terms": dialects
+        })
+    
+    confusions=find_terms(text, SOUND_CONFUSION_TERMS)
+    if confusions:
+        suggestions.append({
+            "category": "sound_confusions",
+            "matched_terms": confusions
+        })
+
+    return suggestions
+
+
