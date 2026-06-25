@@ -114,7 +114,7 @@ def normalise_text(text:str):
     return text.lower().strip()
 
 
-def suggest_categories(text:str):
+def suggest_categories(text:str, use_named_entities):
     """
     This fxn and it's components will get more and more intelligent per version.
     """
@@ -152,12 +152,13 @@ def suggest_categories(text:str):
             "matched_terms": confusions
         })
     
-    named_entities=find_named_entities(text)
-    if named_entities:
-        suggestions.append({
-                    "category": "named_entities",
-                    "matched_terms": named_entities
-                })
+    if use_named_entities:
+        named_entities=find_named_entities(text)
+        if named_entities:
+            suggestions.append({
+                        "category": "named_entities",
+                        "matched_terms": named_entities
+                    })
 
     return suggestions
 
