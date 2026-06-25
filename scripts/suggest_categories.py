@@ -89,3 +89,26 @@ def find_numbers_dates_amounts(text: str) -> list[str]:
 
     return sorted(set(matches))
 
+def find_named_entities(text_str):
+    """
+    This will be replaced later by spaCy, but for now
+    let's just find the capitalised words not at the start of the sentence.
+    """
+    pattern = r"\b[A-Z][a-zA-Z'-]+\b"
+    capitalised_words=re.findall(pattern, text)
+    words=text.split()
+
+    if not words:
+        return []
+
+    #let's get the first word out and cleaned, if not it'll be confused as a named entity all the time.
+    first_word=re.sub(r"\b[^a-zA-z'-]","",words[0])
+
+    entities=[
+        word for word in capitalised_words if word!=first_word
+    ]
+
+    return entities
+    
+def normalise_text(text:str):
+    return text.lower().strip()
