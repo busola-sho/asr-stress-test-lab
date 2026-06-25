@@ -1,0 +1,14 @@
+{
+  "id": "negation_001",
+  "accent_group": "Scottish English",
+  "accent_subgroup": "",
+  "category": "Negation and tiny meaning words",
+  "reference": "I did not see him leave the shop.",
+  "audio_path": "audio/negation_001.wav",
+  "source_dataset": "Common Voice",
+  "source_url": "",
+  "license": "CC-0",
+  "risk_level": "high",
+  "failure_rule": "Check whether negation words such as not, no, never are missing or changed.",
+  "notes": "Tests whether the ASR preserves a meaning-critical negation."
+}

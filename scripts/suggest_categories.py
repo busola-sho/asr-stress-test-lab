@@ -1,0 +1,91 @@
+"""
+suggest_categories.py v1
+
+Rule-based category suggester for Accent Stress Test Lab.
+
+Given a reference transcript, suggest which stress-test categories it may belong to:
+- negation_tiny_words
+- named_entities
+- numbers_dates_amounts
+- dialect_words_slang_idioms
+- accent_sound_confusions
+
+Important: this does not give final labels. It only suggests candidate categories
+for manual review.
+"""
+
+import re
+ 
+ NEGATION_TERMS = [
+    "not", "no", "never", "without", "unless",
+    "didn't", "doesn't", "don't", "can't", "cannot",
+    "won't", "wasn't", "weren't", "isn't", "aren't",
+    "before", "after", "only"
+]
+
+DIALECT_VOCAB = {
+    "scottish": ["wee", "aye", "nae", "ken", "bairn"],
+    "nigerian_pidgin": ["wahala", "abi", "dey", "sha", "oga", "sabi"]
+}
+
+SOUND_CONFUSION_TERMS = [
+    "three", "thirty", "think", "thing", "this", "that",
+    "ship", "sheep", "sit", "seat",
+    "walk", "work",
+    "full", "fool",
+    "car", "care"
+]
+
+
+NUMBER_WORDS = [
+    "zero", "one", "two", "three", "four", "five", "six",
+    "seven", "eight", "nine", "ten", "eleven", "twelve",
+    "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
+    "eighteen", "nineteen", "twenty", "thirty", "forty",
+    "fifty", "sixty", "seventy", "eighty", "ninety",
+    "hundred", "thousand", "million", "billion"
+]
+
+
+MONTHS = [
+    "january", "february", "march", "april", "may", "june",
+    "july", "august", "september", "october", "november", "december"
+]
+
+def find_terms(text: str, terms: list[str]) -> list[str]:
+    """
+    Return terms that appear in the text.
+    Uses word boundaries so 'no' does not match inside 'nobody'.
+    """
+    text=text.lower()
+    matches=[]
+
+    for term in terms:
+        pattern=r"\b" + re.escape(term.lower()) + r"\b"
+        if re.search(pattern, text):
+            matches.append(term)
+    return matches
+
+def find_numbers_dates_amounts(text: str) -> list[str]:
+    text_lower = text.lower()
+    matches = []
+
+    regex_patterns = {
+        "digit": r"\d",
+        "time": r"\b\d{1,2}:\d{2}\b",
+        "money_symbol": r"[£$€]",
+        "date_suffix": r"\b\d{1,2}(st|nd|rd|th)\b",
+        "year": r"\b(19|20)\d{2}\b",
+        "four_digit_number": r"\b\d{4}\b" #could be pin, year or anything.
+    }
+
+    for label, pattern in regex_patterns.items():
+        if re.search(pattern, text_lower):
+            matches.append(label)
+
+    matches.extend(find_terms(text_lower, NUMBER_WORDS))
+    matches.extend(find_terms(text_lower, MONTHS))
+    matches.extend(find_terms(text_lower, ["pounds", "dollars", "euros"]))
+
+    return sorted(set(matches))
+
