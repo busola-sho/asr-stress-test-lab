@@ -112,17 +112,6 @@ def collect_from_local_folder(
                     transcript_column,
                     "local"
                 )
-                # card = {
-                #     "id": f"{LOCAL_DATASET_NAMES[folder_path]}_{i:06d}_{suggestion['category']}",
-                #     "source_type": "local",
-                #     "source_dataset": source_dataset,
-                #     "accent_group": accent_group,
-                #     "category_suggestion": suggestion["category"],
-                #     "reference": reference,
-                #     "audio_path": str(audio_path),
-                #     "matched_terms": suggestion["matched_terms"],
-                #     "review_status": "needs_review"
-                # }
                 cards.append(card)
 
             if len(cards) >= max_cards:
