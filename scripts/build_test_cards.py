@@ -63,6 +63,5 @@ def main():
 
     print(f"Wrote {len(deduped)} final test cards to {OUTPUT_PATH}")
 
-
 if __name__ == "__main__":
     main()

@@ -15,66 +15,82 @@ LOCAL_DATASET_NAMES={
     "data/raw/scots":"cv_scots"
 }
 
-def make_card(row, index, suggestion, dataset, transcript, source_type):
-    if source_type=="huggingface":
-        tag=HF_DATASET_NAMES[dataset]
+def make_card(row, index, suggestions, dataset, transcript, source_type, audio_path=None, split=None):
+    if source_type == "huggingface":
+        tag = HF_DATASET_NAMES[dataset]
     else:
-        tag=LOCAL_DATASET_NAMES[dataset]
-        
-    possible_path_names=["file","path","audio_path", "audio_file"]
-    path=""
+        tag = LOCAL_DATASET_NAMES[dataset]
+
+    possible_path_names = ["file", "path", "audio_path", "audio_file"]
+    path_key = ""
     for name in possible_path_names:
         if name in row:
-            path=name
-    return {
-        "id": f"{tag}_{index:06d}_{suggestion['category']}",
-        "accent_group": row.get("accent") or row.get("accents") or "",
-        "category_suggestion": suggestion["category"],
+            path_key = name
+            break
+
+    card = {
+        "id": f"{tag}_{index:06d}",
+        "accent_group": row.get("accent") or row.get("accents") or tag,
+        "categories": [s["category"] for s in suggestions],
         "reference": row.get(transcript, ""),
-        "audio_path": row[path] if path else "",
+        "audio_path": audio_path or row.get(path_key) or "",
         "source_dataset": dataset,
         "source_type": source_type,
-        "matched_terms": suggestion["matched_terms"],
-        "review_status": "needs_review"
+        "matched_terms": {
+            s["category"]: s["matched_terms"]
+            for s in suggestions
+        },
+        "review_status": "needs_review",
     }
 
+    if source_type == "huggingface":
+        card["split"] = split
+        card["row_index"] = index
+
+    return card
+
+
 def collect_from_huggingface():
-    all_cards=[]
+    all_cards = []
     for ds_name, tag in HF_DATASET_NAMES.items():
-        split="train.clean.100" if tag=="librispeech" else "train"
-        ds = load_dataset(ds_name, split=split)
+        split = "train.clean.100" if tag == "librispeech" else "train"
+        ds = load_dataset(ds_name, split=split, streaming=True)
         ds = ds.cast_column("audio", Audio(decode=False))
 
-        cards=[]
-
-        
+        cards = []
         for i, row in enumerate(ds):
-            transcript="text" if tag=="librispeech" else "sentence"
+            transcript = "text" if tag == "librispeech" else "sentence"
             reference = row[transcript]
-            if tag == "librispeech":
-                use_named_entities = False
-            else:
-                use_named_entities = True
+            use_named_entities = tag != "librispeech"
 
-            suggestions = suggest_categories(reference, use_named_entities = use_named_entities)
+            suggestions = suggest_categories(reference, use_named_entities=use_named_entities)
+            if not suggestions:
+                continue
 
-            for suggestion in suggestions:
-                card = make_card(row, i, suggestion, ds_name, transcript, "huggingface")
-                cards.append(card)
+            card = make_card(
+                row=row,
+                index=i,
+                suggestions=suggestions,
+                dataset=ds_name,
+                transcript=transcript,
+                source_type="huggingface",
+                split=split,        # <-- now passed in
+            )
+            cards.append(card)
 
             if len(cards) >= 30:
                 all_cards.extend(cards)
                 break
+
         if len(all_cards) >= 120:
-                break   
-        
+            break
+
     output_path = Path("data/interim/candidates_huggingface.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(all_cards, f, ensure_ascii=False, indent=2)
-
     print(f"Wrote {len(all_cards)} candidate cards to {output_path}")
+
 
 def collect_from_local_folder(
     folder_path: str,
@@ -103,16 +119,20 @@ def collect_from_local_folder(
             audio_path = audio_dir / audio_filename
             suggestions = suggest_categories(reference, True)
 
-            for suggestion in suggestions:
-                card =make_card(
-                    row,
-                    i,
-                    suggestion,
-                    folder_path,
-                    transcript_column,
-                    "local"
-                )
-                cards.append(card)
+            if not suggestions:
+                continue
+
+            card = make_card(
+                row=row,
+                index=i,
+                suggestions=suggestions,
+                dataset=folder_path,
+                transcript=transcript_column,
+                source_type="local",
+                audio_path=str(audio_path),
+            )
+
+            cards.append(card)
 
             if len(cards) >= max_cards:
                 break
