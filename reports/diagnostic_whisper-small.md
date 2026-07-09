@@ -1,43 +1,41 @@
 # ASR Diagnostic: whisper-small
 
-Overall WER: **34.5%**
+Overall WER: **11.7%**
 
 ## Likely failure areas
 
-- **Numbers Dates Amounts**: 45.9% WER
-- **Negations**: 43.2% WER
-- **Sound Confusions**: 37.4% WER
-- ** accent**: 96.8% WER
-- **Hong Kong English accent**: 28.6% WER
+- **Dialect Words**: 20.1% WER
+- **Named Entities**: 18.4% WER
+- **Sound Confusions**: 11.9% WER
+- **Scottish English accent**: 17.0% WER
+- **nigerian accent**: 16.8% WER
 
 ## Example failures
 
-### Numbers Dates Amounts
+### Dialect Words
 
-Reference: ASSUMED ALL AT ONCE AN APPEARANCE OF NOISE AND DISORDER NEVER BELIEVE HOWEVER DISINTERESTED THE LOVE OF A KEPT WOMAN MAY BE THAT IT WILL COST ONE NOTHING
+Dataset: data/raw/scots
 
-Prediction:  Assumed all at once an appearance of noise and disorder. Never believe, however disinterested, the love of a kept woman may be, that it will cost one nothing.
+Accent: Scottish English
 
-### Negations
+Reference: I’ve got this precious object- I do- I treasure it. Um, it was when I was expecting my fourth child, eh, my friend that I knew, she was really lovely, she gave me this as a gift and it was a Black Madonna. It was wooden, the- the way it was a' carved oot was stunning. And it’s the Black Madonna with her wee baby in her arms, and I thought- it just always- you know, I’ve always treasured it. It’s just lovely.
 
-Reference: ASSUMED ALL AT ONCE AN APPEARANCE OF NOISE AND DISORDER NEVER BELIEVE HOWEVER DISINTERESTED THE LOVE OF A KEPT WOMAN MAY BE THAT IT WILL COST ONE NOTHING
+Prediction:  I've got this precious object I do, I treasure it, it was when I was expecting my fourth child, my friend that I knew, she was really lovely, she gave me this as a gift and it was a black Madonna, the weight was all carved out, it was stunning and it's the black Madonna with wee baby near her arms and I've always treasured it, it's just lovely.
+### Named Entities
 
-Prediction:  Assumed all at once an appearance of noise and disorder. Never believe, however disinterested, the love of a kept woman may be, that it will cost one nothing.
+Dataset: benjaminogbonna/nigerian_accented_english_dataset
 
+Accent: nigerian
+
+Reference: Head south on Ibo Road towards Emir Road
+
+Prediction:  It's out on the Igbo route towards Emia route.
 ### Sound Confusions
 
-Reference: ASSUMED ALL AT ONCE AN APPEARANCE OF NOISE AND DISORDER NEVER BELIEVE HOWEVER DISINTERESTED THE LOVE OF A KEPT WOMAN MAY BE THAT IT WILL COST ONE NOTHING
+Dataset: benjaminogbonna/nigerian_accented_english_dataset
 
-Prediction:  Assumed all at once an appearance of noise and disorder. Never believe, however disinterested, the love of a kept woman may be, that it will cost one nothing.
+Accent: nigerian
 
-###  accent
+Reference: Try out this ear worm.
 
-Reference: ASSUMED ALL AT ONCE AN APPEARANCE OF NOISE AND DISORDER NEVER BELIEVE HOWEVER DISINTERESTED THE LOVE OF A KEPT WOMAN MAY BE THAT IT WILL COST ONE NOTHING
-
-Prediction:  Assumed all at once an appearance of noise and disorder. Never believe, however disinterested, the love of a kept woman may be, that it will cost one nothing.
-
-### Hong Kong English accent
-
-Reference: Not everybody agrees that globalisation is progress
-
-Prediction:  Not everybody agrees that globalization is progress.
+Prediction:  Try out this earworm.

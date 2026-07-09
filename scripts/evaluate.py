@@ -3,11 +3,17 @@ from jiwer import wer
 from collections import defaultdict
 from pathlib import Path
 import argparse
+import string
+
+def normalise_text(text: str) -> str:
+    text = text.lower()
+    text = text.translate(str.maketrans("", "", string.punctuation))
+    text = " ".join(text.split())
+    return text
 
 def load_json(path: str) -> list[dict]:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
-
 
 def evaluate_model_preds(preds_path, refs_path):
     preds = load_json(preds_path)
@@ -28,13 +34,14 @@ def evaluate_model_preds(preds_path, refs_path):
         pred_text = pred["prediction"]
         ref_text = ref["reference"]
 
-        example_wer = wer(ref_text, pred_text)
+        example_wer = wer(normalise_text(ref_text), normalise_text(pred_text))
 
         row = {
             "id": ref["id"],
             "model_name": pred["model_name"],
             "accent_group": ref["accent_group"],
             "categories": ref["categories"],
+            "source_dataset": ref["source_dataset"],
             "reference": ref_text,
             "prediction": pred_text,
             "wer": example_wer,
@@ -132,31 +139,43 @@ def write_simple_report(
     lines.append("## Example failures")
     lines.append("")
 
+    used_example_ids = set()
+
     for category, score in worst_categories:
         example = find_worst_example(rows, "category", category)
 
-        if not example:
+        if not example or example["id"] in used_example_ids:
             continue
 
+        used_example_ids.add(example["id"])
+
         lines.append(f"### {prettify(category)}")
+        lines.append("")
+        lines.append(f"Dataset: {example['source_dataset']}")
+        lines.append("")
+        lines.append(f"Accent: {example['accent_group']}")
         lines.append("")
         lines.append(f"Reference: {example['reference']}")
         lines.append("")
         lines.append(f"Prediction: {example['prediction']}")
-        lines.append("")
 
     for accent, score in worst_accents:
         example = find_worst_example(rows, "accent_group", accent)
 
-        if not example:
+        if not example or example["id"] in used_example_ids:
             continue
 
+        used_example_ids.add(example["id"])
+
         lines.append(f"### {accent} accent")
+        lines.append("")
+        lines.append(f"Dataset: {example['source_dataset']}")
+        lines.append("")
+        lines.append(f"Accent: {example['accent_group']}")
         lines.append("")
         lines.append(f"Reference: {example['reference']}")
         lines.append("")
         lines.append(f"Prediction: {example['prediction']}")
-        lines.append("")
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
