@@ -140,4 +140,4 @@ ASR models are often judged by one average score. But in real use, the important
 
 > “Will this model fail on the kinds of speech and details I care about?”
 
-This project is my attempt to make that easier to check.
+This project is my attempt to make that easier to check without having to look for benchmarks or leaderboards.
