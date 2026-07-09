@@ -1,6 +1,6 @@
 import json
 from jiwer import wer
-
+from collections import defaultdict
 
 def load_json(path: str) -> list[dict]:
     with open(path, "r", encoding="utf-8") as f:
@@ -53,3 +53,33 @@ def evaluate_model_preds(preds_path, refs_path):
 
     return rows, accent_rows, category_rows
 
+def average_wer(rows, group_key):
+    groups = defaultdict(list)
+
+    for row in rows:
+        group_name = row[group_key]
+        groups[group_name].append(row["wer"])
+
+    averages = {}
+
+    for group_name, wer_scores in groups.items():
+        averages[group_name] = sum(wer_scores) / len(wer_scores)
+
+    return averages
+
+def main():
+    rows, accent_rows, category_rows = evaluate_model_preds(
+        preds_path="results/predictions_whisper_small.json",
+        refs_path="data/final/test_cards.json",
+    )
+
+    overall_wer = sum(row["wer"] for row in rows) / len(rows)
+    wer_by_accent = average_wer(accent_rows, "accent_group")
+    wer_by_category = average_wer(category_rows, "category")
+
+    print("Overall WER:", overall_wer)
+    print("WER by accent:", wer_by_accent)
+    print("WER by category:", wer_by_category)
+
+if __name__ == "__main__":
+    main()
