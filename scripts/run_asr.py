@@ -70,6 +70,7 @@ def resolve_audio(card):
         )
 
         return {
+            "path": card["audio_path"],
             "raw": audio_array,
             "sampling_rate": 16000,
         }
@@ -93,6 +94,7 @@ def resolve_audio(card):
         )
 
         return {
+            "path": audio_path,
             "raw": audio_array,
             "sampling_rate": 16000,
         }
@@ -124,7 +126,7 @@ def main():
     parser.add_argument("--out", default="results/predictions_whisper_small.json")
     parser.add_argument("--device", default="auto")
 
-    parser.add_argument("--provider", choices=["hf", "openai", "ollama"], default="hf")
+    parser.add_argument("--provider", choices=["hf", "openai"], default="hf")
 
     args = parser.parse_args()
 
@@ -151,7 +153,11 @@ def main():
 
         try:
             audio_input = resolve_audio(card)
-            transcript = model.transcribe(audio_input["raw"])
+            
+            if args.provider == "openai":
+                transcript = model.transcribe(audio_input["path"])
+            else:
+                transcript = model.transcribe(audio_input)
 
             prediction = make_prediction(
                 card=card,

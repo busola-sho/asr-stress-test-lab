@@ -5,6 +5,9 @@ from pathlib import Path
 import argparse
 import string
 
+def safe_name(name: str) -> str:
+    return name.replace("/", "_").replace("-", "_")
+
 def normalise_text(text: str) -> str:
     text = text.lower()
     text = text.translate(str.maketrans("", "", string.punctuation))
@@ -216,7 +219,7 @@ def main():
         wer_by_accent=wer_by_accent,
         wer_by_category=wer_by_category,
         model_name=model_name,
-        output_path=f"reports/diagnostic_{model_name}.md",
+        output_path = args.out or f"reports/diagnostic_{safe_name(model_name)}.md"
     )
 
 if __name__ == "__main__":
