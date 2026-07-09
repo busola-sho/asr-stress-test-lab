@@ -5,7 +5,7 @@ from pathlib import Path
 import librosa
 from datasets import load_dataset, Audio
 
-from src import HuggingFaceASR
+from src.asr.factory import create_asr_model
 
 
 _ds_cache = {}
@@ -124,6 +124,8 @@ def main():
     parser.add_argument("--out", default="results/predictions_whisper_small.json")
     parser.add_argument("--device", default="auto")
 
+    parser.add_argument("--provider", choices=["hf", "openai", "ollama"], default="hf")
+
     args = parser.parse_args()
 
     cards = load_cards(args.cards)
@@ -134,9 +136,10 @@ def main():
     print(f"Loaded {len(cards)} cards")
     print(f"Found {len(completed_ids)} existing predictions. Resuming...")
 
-    model = HuggingFaceASR(
-        model_id=args.model_id,
-        device=args.device,
+    model = create_asr_model(
+            provider=args.provider,
+            model_id=args.model_id,
+            device=args.device,
     )
 
     for i, card in enumerate(cards):
