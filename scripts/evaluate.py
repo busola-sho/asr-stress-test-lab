@@ -1,6 +1,8 @@
 import json
 from jiwer import wer
 from collections import defaultdict
+from pathlib import Path
+import argparse
 
 def load_json(path: str) -> list[dict]:
     with open(path, "r", encoding="utf-8") as f:
@@ -67,11 +69,119 @@ def average_wer(rows, group_key):
 
     return averages
 
+def prettify(label: str) -> str:
+    return label.replace("_", " ").title()
+
+def find_worst_example(rows, key, value):
+    matching = []
+
+    for row in rows:
+        if key == "category":
+            if value in row["categories"]:
+                matching.append(row)
+        else:
+            if row[key] == value:
+                matching.append(row)
+
+    if not matching:
+        return None
+
+    return max(matching, key=lambda row: row["wer"])
+
+
+def write_simple_report(
+    rows,
+    overall_wer,
+    wer_by_accent,
+    wer_by_category,
+    model_name,
+    output_path,
+):
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    worst_categories = sorted(
+        wer_by_category.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:3]
+
+    worst_accents = sorted(
+        wer_by_accent.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:2]
+
+    lines = []
+
+    lines.append(f"# ASR Diagnostic: {model_name}")
+    lines.append("")
+    lines.append(f"Overall WER: **{overall_wer:.1%}**")
+    lines.append("")
+
+    lines.append("## Likely failure areas")
+    lines.append("")
+
+    for category, score in worst_categories:
+        lines.append(f"- **{prettify(category)}**: {score:.1%} WER")
+
+    for accent, score in worst_accents:
+        lines.append(f"- **{accent} accent**: {score:.1%} WER")
+
+    lines.append("")
+    lines.append("## Example failures")
+    lines.append("")
+
+    for category, score in worst_categories:
+        example = find_worst_example(rows, "category", category)
+
+        if not example:
+            continue
+
+        lines.append(f"### {prettify(category)}")
+        lines.append("")
+        lines.append(f"Reference: {example['reference']}")
+        lines.append("")
+        lines.append(f"Prediction: {example['prediction']}")
+        lines.append("")
+
+    for accent, score in worst_accents:
+        example = find_worst_example(rows, "accent_group", accent)
+
+        if not example:
+            continue
+
+        lines.append(f"### {accent} accent")
+        lines.append("")
+        lines.append(f"Reference: {example['reference']}")
+        lines.append("")
+        lines.append(f"Prediction: {example['prediction']}")
+        lines.append("")
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    print(f"Wrote report to {output_path}")
+
+
 def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--preds", default="results/predictions_whisper_small.json")
+    parser.add_argument("--refs", default="data/final/test_cards.json")
+    parser.add_argument("--out", default=None)
+
+    args = parser.parse_args()
+
     rows, accent_rows, category_rows = evaluate_model_preds(
-        preds_path="results/predictions_whisper_small.json",
-        refs_path="data/final/test_cards.json",
+        preds_path=args.preds,
+        refs_path=args.refs,
     )
+
+    model_name = rows[0]["model_name"]
+
+    if not rows:
+        raise ValueError("No matching predictions found. Check that prediction IDs match test card IDs.")
 
     overall_wer = sum(row["wer"] for row in rows) / len(rows)
     wer_by_accent = average_wer(accent_rows, "accent_group")
@@ -80,6 +190,15 @@ def main():
     print("Overall WER:", overall_wer)
     print("WER by accent:", wer_by_accent)
     print("WER by category:", wer_by_category)
+
+    write_simple_report(
+        rows=rows,
+        overall_wer=overall_wer,
+        wer_by_accent=wer_by_accent,
+        wer_by_category=wer_by_category,
+        model_name=model_name,
+        output_path=f"reports/diagnostic_{model_name}.md",
+    )
 
 if __name__ == "__main__":
     main()
